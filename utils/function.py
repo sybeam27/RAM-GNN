@@ -7,13 +7,16 @@ import torch.nn.functional as F
 from torch_geometric.data import HeteroData
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from xgboost import XGBRegressor
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from xgboost import XGBRegressor, XGBClassifier
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from ram_gnn import MultiplexRegression, A_MultiplexRegression, RA_MultiplexRegression
+from ram_gnn import MultiplexClassifier, A_MultiplexClassifier, RA_MultiplexClassifier
 from model import MLPRegression, GCNRegression, GATRegression, GraphSAGERegression, RGCNRegression, HANRegression, MuxGNNRegression
+from model import MLPClassifier, GCNClassifier, GATClassifier, GraphSAGEClassifier, RGCNClassifier, HANClassifier, MuxGNNClassifier
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -197,7 +200,7 @@ def get_model_dict(graph_data, hidden_dim, num_layers, dropout):
         "GraphSAGE": lambda: GraphSAGERegression(in_dim, hidden_dim, num_layers, dropout),
         "RGCN": lambda: RGCNRegression(in_dim, hidden_dim, num_layers, num_rel),
         "HAN": lambda: HANRegression(graph_data.metadata(), in_dim, hidden_dim, heads=1, num_layers=num_layers, dropout=dropout),
-        "MuxGNN": lambda: MuxGNNRegression(in_dim, hidden_dim, 'gcn', num_layers, num_rel, dropout),
+        "MuxGNN": lambda: MuxGNNRegression(in_dim, hidden_dim, num_relations=num_rel, gnn_type='gcn', num_layers=num_layers, dropout=dropout),  
         "M-GNN": lambda: MultiplexRegression(in_dim, hidden_dim, num_rel, 'gcn', num_layers, dropout),
         "MA-GNN": lambda: A_MultiplexRegression(in_dim, hidden_dim, num_rel, 'gcn', num_layers, dropout),
         "RAM-GNN": lambda: RA_MultiplexRegression(in_dim, hidden_dim, num_rel, 'gcn', num_layers, dropout),
@@ -301,3 +304,180 @@ def compute_metrics(y_true, y_pred):
     mae = mean_absolute_error(y_true, y_pred)
     r2 = r2_score(y_true, y_pred)
     return mse, rmse, mae, r2
+
+def get_classification_models(graph_data, hidden_dim, num_classes, num_layers, drop_out):
+    in_dim = graph_data['job'].x.shape[1]
+
+    return {
+        # 비그래프 기반
+        "Linear": lambda: LogisticRegression(max_iter=1000, n_jobs=1),
+
+        "RandomForest": lambda: RandomForestClassifier(n_estimators=100, n_jobs=1, random_state=42),
+        "XGBoost": lambda: XGBClassifier(
+            n_estimators=100,
+            max_depth=6,
+            n_jobs=1,
+            use_label_encoder=False,
+            eval_metric='logloss',
+            verbosity=0,
+            random_state=42
+        ),
+        
+        # 그래프 기반
+        "MLP": lambda: MLPClassifier(in_dim, hidden_dim, num_classes, num_layers),
+        "GCN": lambda: GCNClassifier(in_dim, hidden_dim, num_classes, num_layers),
+        "GAT": lambda: GATClassifier(in_dim, hidden_dim, num_classes, num_layers),
+        "GraphSAGE": lambda: GraphSAGEClassifier(in_dim, hidden_dim, num_classes, num_layers),
+        
+        "RGCN": lambda: RGCNClassifier(
+            in_channels=in_dim,
+            hidden_channels=hidden_dim,
+            num_classes=num_classes,
+            num_relations=len(graph_data.edge_types),
+            num_layers=num_layers
+        ),
+        "HAN": lambda: HANClassifier(
+            metadata=graph_data.metadata(),
+            in_channels=in_dim,
+            hidden_channels=hidden_dim,
+            num_classes=num_classes,
+            num_layers=num_layers,
+            dropout=drop_out
+        ),
+        
+        "MuxGNN": lambda: MuxGNNClassifier(
+            in_channels=graph_data['job'].x.shape[1],
+            out_channels=hidden_dim,
+            gnn_type='gcn',
+            num_layers=num_layers,
+            num_classes=num_classes,
+            num_relations=len(graph_data.edge_types),
+            dropout=drop_out
+        ),
+
+        "M-GNN": lambda: MultiplexClassifier(
+            in_channels=graph_data['job'].x.shape[1],
+            out_channels=hidden_dim,
+            num_relations=len(graph_data.edge_types),
+            num_classes = num_classes,
+            num_layers=num_layers,
+            gnn_type='gcn',
+            dropout=drop_out
+        ),
+
+        "MA-GNN": lambda: A_MultiplexClassifier(
+            in_channels=graph_data['job'].x.shape[1],
+            out_channels=hidden_dim,
+            num_relations=len(graph_data.edge_types),
+            num_classes = num_classes,
+            num_layers=num_layers,
+            gnn_type='gcn',
+            dropout=drop_out
+        ),
+
+        "RAM-GNN": lambda: RA_MultiplexClassifier(
+            in_channels=graph_data['job'].x.shape[1],
+            out_channels=hidden_dim,
+            num_relations=len(graph_data.edge_types),
+            num_classes = num_classes,
+            num_layers=num_layers,
+            gnn_type='gcn',
+            dropout=drop_out
+        ),
+                
+    }
+
+def detection_train(model, data, optimizer):
+    model.train()
+    optimizer.zero_grad()
+
+    if isinstance(model, HANClassifier):
+        out = model(data.x_dict, data.edge_index_dict)
+        y = data['job'].y
+        mask = data['job'].train_mask
+
+    elif isinstance(model, (MultiplexClassifier, A_MultiplexClassifier, RA_MultiplexClassifier, MuxGNNClassifier)):
+        edge_index_list = [ei for ei in data.edge_index_dict.values()]
+        out = model(data['job'].x, edge_index_list)
+        y = data['job'].y
+        mask = data['job'].train_mask
+        
+    elif isinstance(model, RGCNClassifier):
+        edge_index = []
+        edge_type = []
+        rel_map = {rel: i for i, rel in enumerate(data.edge_types)}
+        for rel, ei in data.edge_index_dict.items():
+            edge_index.append(ei)
+            edge_type.append(torch.full((ei.size(1),), rel_map[rel], dtype=torch.long))
+        edge_index = torch.cat(edge_index, dim=1)
+        edge_type = torch.cat(edge_type, dim=0)
+
+        out = model(data['job'].x, edge_index, edge_type)
+        y = data['job'].y
+        mask = data['job'].train_mask
+        
+    elif hasattr(model, 'forward') and 'edge_index' in model.forward.__code__.co_varnames:
+        raw_edge_index = torch.cat([ei for _, ei in data.edge_index_dict.items()], dim=1)
+        edge_index = deduplicate_edges(raw_edge_index)
+        out = model(data['job'].x, edge_index)
+        y = data['job'].y
+        mask = data['job'].train_mask
+
+    else:
+        out = model(data['job'].x)
+        y = data['job'].y
+        mask = data['job'].train_mask
+
+    loss = F.cross_entropy(out[mask], y[mask])
+    loss.backward()
+    optimizer.step()
+    return loss.item()
+
+@torch.no_grad()
+def detection_evaluate(model, data, mask):
+    model.eval()
+
+    if isinstance(model, HANClassifier):
+        out = model(data.x_dict, data.edge_index_dict)
+        y = data['job'].y
+
+    elif isinstance(model, (MultiplexClassifier, A_MultiplexClassifier, RA_MultiplexClassifier, MuxGNNClassifier)):
+        edge_index_list = [ei for ei in data.edge_index_dict.values()]
+        out = model(data['job'].x, edge_index_list)
+        y = data['job'].y
+
+    elif isinstance(model, RGCNClassifier):
+        edge_index = []
+        edge_type = []
+        rel_map = {rel: i for i, rel in enumerate(data.edge_types)}
+        for rel, ei in data.edge_index_dict.items():
+            edge_index.append(ei)
+            edge_type.append(torch.full((ei.size(1),), rel_map[rel], dtype=torch.long))
+        edge_index = torch.cat(edge_index, dim=1)
+        edge_type = torch.cat(edge_type, dim=0)
+
+        out = model(data['job'].x, edge_index, edge_type)
+        y = data['job'].y
+
+    elif hasattr(model, 'forward') and 'edge_index' in model.forward.__code__.co_varnames:
+        raw_edge_index = torch.cat([ei for _, ei in data.edge_index_dict.items()], dim=1)
+        edge_index = deduplicate_edges(raw_edge_index)
+        out = model(data['job'].x, edge_index)
+        y = data['job'].y
+    else:
+        out = model(data['job'].x)
+        y = data['job'].y
+
+    pred = out[mask].argmax(dim=1).cpu().numpy()
+    true = y[mask].cpu().numpy()
+
+    acc = accuracy_score(true, pred)
+    precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average='macro', zero_division=0)
+
+    return {
+        'accuracy': acc,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1
+    }
+

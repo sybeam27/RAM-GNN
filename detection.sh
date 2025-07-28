@@ -1,0 +1,13 @@
+#!/bin/bash
+# python ./utils/detection.py --model Linear --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model RandomForest --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model XGBoost --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model MLP --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model GCN --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model GAT --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model GraphSAGE --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model RGCN --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model HAN --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model MuxGNN --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+# python ./utils/detection.py --model M-GNN --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 
+python ./utils/detection.py --model RAM-GNN --graph_path './data/detection/graph_data.pt' --res_path './res/detection' 

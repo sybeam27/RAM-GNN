@@ -1,5 +1,5 @@
 # prediction 
-# python prediction.py --model RAM-GNN --graph_path '../data/prediction/graph_data.pt' 
+# python prediction.py --model RAM-GNN
 
 import os
 import csv
@@ -51,7 +51,7 @@ def main(args):
 
         best_val_mse = float('inf')
         best_model_state = None
-        patience = 200
+        patience = 500
         patience_counter = 0
 
         for epoch in range(1, args.epochs + 1):
@@ -78,11 +78,11 @@ def main(args):
     result_str += f"[{args.model}] Test MSE: {test_mse:.4f} | RMSE: {test_rmse:.4f} | MAE: {test_mae:.4f} | R²: {test_r2:.4f}"
     print(result_str)
 
-    result_dir = os.path.join("../res", args.model)
+    result_dir = os.path.join(args.res_path, args.model)
     os.makedirs(result_dir, exist_ok=True)
 
     # Save to CSV (append or create)
-    csv_path = os.path.join(result_dir, "experiment_results.csv")
+    csv_path = os.path.join(result_dir, "prediction_exp_results.csv")
     file_exists = os.path.exists(csv_path)
 
     with open(csv_path, mode='a', newline='') as csvfile:
@@ -107,10 +107,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run prediction model on graph data")
     parser.add_argument('--model', type=str, required=True,
                         help="Model name: Linear, RandomForest, XGBoost, MLP, GCN, GAT, GraphSAGE, RGCN, HAN, MuxGNN, M-GNN, MA-GNN, RAM-GNN")
-    parser.add_argument('--graph_path', type=str, default='../data/graph_data.pt',
+    parser.add_argument('--graph_path', type=str, default='../data/prediction/graph_data.pt',
                         help="Path to saved graph_data.pt")
-    parser.add_argument('--save_path', type=str, default='../model/',
+    parser.add_argument('--save_path', type=str, default='../model/prediction/',
                         help="Base directory to save model (actual path will include model name)")
+    parser.add_argument('--res_path', type=str, default='../res/prediction/')
     parser.add_argument('--hidden_dim', type=int, default=64)
     parser.add_argument('--num_layers', type=int, default=2)
     parser.add_argument('--dropout', type=float, default=0.3)
