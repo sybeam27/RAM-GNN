@@ -11,8 +11,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from ram_gnn import MultiplexRegression, A_MultiplexRegression, RA_MultiplexRegression
-from gnn import MLPRegression, GCNRegression, GATRegression, GraphSAGERegression, RGCNRegression, HANRegression, MuxGNNRegression
+from model import MLPRegression, GCNRegression, GATRegression, GraphSAGERegression, RGCNRegression, HANRegression, MuxGNNRegression
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -173,7 +174,7 @@ def deduplicate_edges(edge_index):
     return torch.tensor(unique_edges, dtype=torch.long).t()
 
 def load_data(graph_path):
-    graph_data = torch.load(graph_path)
+    graph_data = torch.load(graph_path, weights_only=False)
     graph_data = split_masks(graph_data)
     return graph_data
 
@@ -212,8 +213,8 @@ def prediction_train(model, data, optimizer):
 
     # Our
     elif isinstance(model, (MultiplexRegression, A_MultiplexRegression, RA_MultiplexRegression)):
-        edge_index_list = [ei for ei in graph_data.edge_index_dict.values()]
-        out = model(graph_data['job'].x, edge_index_list).squeeze(-1)
+        edge_index_list = [ei for ei in data.edge_index_dict.values()]
+        out = model(data['job'].x, edge_index_list).squeeze(-1)
 
     # RGCN
     elif isinstance(model, RGCNRegression):
@@ -240,8 +241,8 @@ def prediction_train(model, data, optimizer):
         out = model(data['job'].x, edge_index).squeeze(-1)
 
     elif isinstance(model, (MultiplexRegression, A_MultiplexRegression, RA_MultiplexRegression, MuxGNNRegression)):
-        edge_index_list = [ei for ei in graph_data.edge_index_dict.values()]
-        out = model(graph_data['job'].x, edge_index_list).squeeze(-1)
+        edge_index_list = [ei for ei in data.edge_index_dict.values()]
+        out = model(data['job'].x, edge_index_list).squeeze(-1)
 
     # MLP
     else:
@@ -271,13 +272,9 @@ def prediction_evaluate(model, data, mask):
         edge_type = torch.cat(edge_type, dim=0)
         out = model(data['job'].x, edge_index, edge_type).squeeze(-1)
 
-    elif isinstance(model, (MultiplexRegression, A_MultiplexRegression, RA_MultiplexRegression)):
-        edge_index_list = [ei for ei in graph_data.edge_index_dict.values()]
-        out = model(graph_data['job'].x, edge_index_list).squeeze(-1)
-    
     elif isinstance(model, (MultiplexRegression, A_MultiplexRegression, RA_MultiplexRegression, MuxGNNRegression)):
-        edge_index_list = [ei for ei in graph_data.edge_index_dict.values()]
-        out = model(graph_data['job'].x, edge_index_list).squeeze(-1)
+        edge_index_list = [ei for ei in data.edge_index_dict.values()]
+        out = model(data['job'].x, edge_index_list).squeeze(-1)
 
     elif hasattr(model, 'forward') and 'edge_index' in model.forward.__code__.co_varnames:        
         raw_edge_index = torch.cat([ei for _, ei in data.edge_index_dict.items()], dim=1)
@@ -292,8 +289,8 @@ def prediction_evaluate(model, data, mask):
 
     mse = F.mse_loss(y_pred, y_true).item()
     rmse = np.sqrt(mse).item()
-    mae = mean_absolute_error(y_true, y_pred).item()
-    r2 = r2_score(y_true, y_pred).item()
+    mae = mean_absolute_error(y_true, y_pred)
+    r2 = r2_score(y_true, y_pred)
     # var = torch.var(y_true).item()
     # r2 = 1 - mse / (var + 1e-6)
     return mse, rmse, mae, r2

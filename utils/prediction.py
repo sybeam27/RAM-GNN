@@ -1,19 +1,12 @@
 # prediction 
-# python prediction.py --model RAM-GNN --graph_path '../data/graph_data.pt' 
+# python prediction.py --model RAM-GNN --graph_path '../data/prediction/graph_data.pt' 
 
 import os
 import csv
 import torch
 import joblib
 import argparse
-import pandas as pd
-import numpy as np
 import copy
-import warnings
-
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from xgboost import XGBRegressor
 
 from function import (
     load_data, get_model_dict,
@@ -58,12 +51,12 @@ def main(args):
 
         best_val_mse = float('inf')
         best_model_state = None
-        patience = 20
+        patience = 200
         patience_counter = 0
 
         for epoch in range(1, args.epochs + 1):
             loss = prediction_train(model, graph_data, optimizer)
-            val_mse, _, _, _ = prediction_evaluate(model, graph_data, graph_data['job'].val_mask)
+            val_mse, _, _, val_r2 = prediction_evaluate(model, graph_data, graph_data['job'].val_mask)
 
             if val_mse < best_val_mse:
                 best_val_mse = val_mse
@@ -74,6 +67,9 @@ def main(args):
                 patience_counter += 1
                 if patience_counter >= patience:
                     break
+            
+            if epoch % 100 == 0:
+                print(f"[{args.model}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val MSE: {val_mse:.4f} | R²: {val_r2:.4f}")
 
         model.load_state_dict(torch.load(save_model_path))
         model.eval()
@@ -84,10 +80,6 @@ def main(args):
 
     result_dir = os.path.join("../res", args.model)
     os.makedirs(result_dir, exist_ok=True)
-
-    # Save text result
-    with open(os.path.join(result_dir, f"{args.model}_result.txt"), 'w') as f:
-        f.write(result_str)
 
     # Save to CSV (append or create)
     csv_path = os.path.join(result_dir, "experiment_results.csv")
@@ -127,57 +119,5 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=500)
 
     args = parser.parse_args()
+    print(f"\n{'='*30}\n▶ {args.model} 시작")
     main(args)
-    print(f"\n{'='*30}\n▶ {name} 시작")
-    model = model_fn()
-
-    if hasattr(model, 'fit'):
-        best_val_mse = float('inf')
-        best_model = None
-        save_path = f'../model/reg_best_model_{name}.pkl'
-
-        model.fit(x_np[train_mask], y_np[train_mask])
-        pred_val = model.predict(x_np[val_mask])
-        val_mse, val_rmse, val_mae, val_r2 = compute_metrics(y_np[val_mask], pred_val)
-
-        if val_mse < best_val_mse:
-            best_val_mse = val_mse
-            joblib.dump(model, save_path)
-
-        best_model = joblib.load(save_path)
-        pred_test = best_model.predict(x_np[test_mask])
-        test_mse, test_rmse, test_mae, test_r2 = compute_metrics(y_np[test_mask], pred_test)
-
-        print(f"[{name}] Test MSE: {test_mse:.4f} | RMSE: {test_rmse:.4f} | MAE: {test_mae:.4f} | R²: {test_r2:.4f}")
-
-    else: 
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-        best_val_mse = float('inf')
-        best_model_state = None
-        patience = 20
-        patience_counter = 0
-        save_path = f"../model/reg_best_model_{name}.pt"
-
-        for epoch in range(1, epochs + 1):
-            loss = prediction_train(model, graph_data, optimizer)
-            val_mse, val_rmse, val_mae, val_r2 = prediction_evaluate(model, graph_data, graph_data['job'].val_mask)
-
-            if val_mse < best_val_mse:
-                best_val_mse = val_mse
-                best_model_state = copy.deepcopy(model.state_dict())
-                torch.save(best_model_state, save_path)
-                patience_counter = 0
-            else:
-                patience_counter += 1
-                if patience_counter >= patience:
-                    # print(f"[{name}] Early stopping at epoch {epoch}")
-                    break
-
-            # if epoch % 100 == 0:
-            #     print(f"[{name}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val MSE: {val_mse:.4f} | R²: {val_r2:.4f}")
-
-        model.load_state_dict(torch.load(save_path))
-        model.eval()
-        test_mse, test_rmse, test_mae, test_r2 = prediction_evaluate(model, graph_data, graph_data['job'].test_mask)
-
-        print(f"[{name}] Test MSE: {test_mse:.4f} | RMSE: {test_rmse:.4f} | MAE: {test_mae:.4f} | R²: {test_r2:.4f}")
