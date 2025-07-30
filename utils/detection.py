@@ -10,14 +10,17 @@ import argparse
 import numpy as np
 
 from function import (
-    split_masks_stratified, get_classification_models,
+    set_seed, split_masks_stratified, load_data, get_classification_models,
     detection_train, detection_evaluate
 )
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 def main(args):
-    graph_data = split_masks_stratified(args.graph_path)
+    # set_seed(42)
+    graph_data = torch.load(args.graph_path, weights_only=False)
+    graph_data = split_masks_stratified(graph_data)
+    # graph_data = load_data(args.graph_path)
 
     x_np = graph_data['job'].x.cpu().numpy()
     y_np = graph_data['job'].y.cpu().numpy()
@@ -62,7 +65,7 @@ def main(args):
 
         best_val_acc = 0.0
         best_model_state = None
-        patience = 500
+        patience = args.patience
         patience_counter = 0
 
         for epoch in range(1, args.epochs + 1):
@@ -80,8 +83,8 @@ def main(args):
                 if patience_counter >= patience:
                     break
             
-            if epoch % 100 == 0:
-                print(f"[{args.model}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val Acc: {val_acc:.4f} | F1: {val_result['f1']:.4f}")
+            # if epoch % 100 == 0:
+            #     print(f"[{args.model}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val Acc: {val_acc:.4f} | F1: {val_result['f1']:.4f}")
 
         model.load_state_dict(torch.load(save_model_path))
         model.eval()
@@ -134,8 +137,9 @@ if __name__ == "__main__":
     parser.add_argument('--dropout', type=float, default=0.3)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=1e-4)
-    parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--epochs', type=int, default=1000)
+    parser.add_argument('--patience', type=int, default=100)
 
     args = parser.parse_args()
-    print(f"\n{'='*30}\n▶ {args.model} 시작")
+    # print(f"\n{'='*30}\n▶ {args.model} 시작")
     main(args)

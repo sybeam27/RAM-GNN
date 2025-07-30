@@ -9,11 +9,14 @@ import argparse
 import copy
 
 from function import (
-    load_data, get_model_dict,
+    set_seed, split_masks, load_data, get_model_dict,
     prediction_train, prediction_evaluate, compute_metrics, 
 )
 
 def main(args):
+    # set_seed(42)
+    # graph_data = torch.load(args.graph_path, weights_only=False)
+    # graph_data = split_masks(graph_data)
     graph_data = load_data(args.graph_path)
 
     x_np = graph_data['job'].x.cpu().numpy()
@@ -51,7 +54,7 @@ def main(args):
 
         best_val_mse = float('inf')
         best_model_state = None
-        patience = 500
+        patience = args.patience
         patience_counter = 0
 
         for epoch in range(1, args.epochs + 1):
@@ -68,8 +71,8 @@ def main(args):
                 if patience_counter >= patience:
                     break
             
-            if epoch % 100 == 0:
-                print(f"[{args.model}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val MSE: {val_mse:.4f} | R²: {val_r2:.4f}")
+            # if epoch % 100 == 0:
+            #     print(f"[{args.model}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val MSE: {val_mse:.4f} | R²: {val_r2:.4f}")
 
         model.load_state_dict(torch.load(save_model_path))
         model.eval()
@@ -117,8 +120,9 @@ if __name__ == "__main__":
     parser.add_argument('--dropout', type=float, default=0.3)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=1e-4)
-    parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--epochs', type=int, default=1000)
+    parser.add_argument('--patience', type=int, default=100)
 
     args = parser.parse_args()
-    print(f"\n{'='*30}\n▶ {args.model} 시작")
+    # print(f"\n{'='*30}\n▶ {args.model} 시작")
     main(args)
