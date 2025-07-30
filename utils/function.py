@@ -123,7 +123,7 @@ def create_classification_hetero_graph(node_df, edge_df, feature_cols, mode='bin
 
     return data
 
-def split_masks(data, split_ratio=(0.6, 0.2, 0.2), seed=42):
+def split_masks(data, split_ratio=(0.6, 0.2, 0.2), seed=None):
     num_nodes = data['job'].num_nodes
     idx = list(range(num_nodes))
 
@@ -140,7 +140,7 @@ def split_masks(data, split_ratio=(0.6, 0.2, 0.2), seed=42):
 
     return data
 
-def split_masks_stratified(data, label_name='Anomaly_label', split_ratio=(0.6, 0.2, 0.2), seed=42):
+def split_masks_stratified(data, label_name='Anomaly_label', split_ratio=(0.6, 0.2, 0.2), seed=None):
     assert sum(split_ratio) == 1.0, "Split ratios must sum to 1"
 
     num_nodes = data['job'].num_nodes

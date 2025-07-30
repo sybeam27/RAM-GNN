@@ -10,14 +10,14 @@ import argparse
 import numpy as np
 
 from function import (
-    load_data, get_classification_models,
+    split_masks_stratified, get_classification_models,
     detection_train, detection_evaluate
 )
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 def main(args):
-    graph_data = load_data(args.graph_path)
+    graph_data = split_masks_stratified(args.graph_path)
 
     x_np = graph_data['job'].x.cpu().numpy()
     y_np = graph_data['job'].y.cpu().numpy()
