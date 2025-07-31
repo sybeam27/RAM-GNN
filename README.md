@@ -3,22 +3,44 @@ Relation-Aware Multiplex Graph Neural Network
 ![framework](./figures/fig_framework.png)
 
 ## Requirements & Setup
-This codebase uses Python's built-in `venv` for managing dependencies instead of Conda.  
+This project uses Python's built-in `venv` for managing the virtual environment instead of Conda.  
 Please follow the steps below to set up the environment using `requirements.txt`.
 
-
-### 1. **Install Python (>= 3.13.5)**  
-Ensure Python 3.13.5 is installed. You can download it from the official site:  
+### 1. **Install Python (≥ 3.13.5)**
+Ensure that Python version 3.13.5 or later is installed on your system.  
+You can download it from the official Python website:
 [https://www.python.org/downloads/](https://www.python.org/downloads/)
 
-
 ### 2. **Clone the Repository**
-Clone the repository using the following command:
+Use Git to clone the repository and navigate into the project directory:
 
 ```bash
 git clone https://github.com/sybeam27/RAM-GNN.git
 cd RAM-GNN
+````
+
+### 3. **Create and Activate a Virtual Environment**
+Use Python's `venv` module to create and activate a virtual environment:
+
+```bash
+# Create virtual environment
+python3.13 -m venv venv
+
+# Activate the virtual environment (Linux/macOS)
+source venv/bin/activate
+
+# Or activate it on Windows
+venv\Scripts\activate
 ```
+
+### 4. **Install Required Dependencies**
+Install all required Python packages using the provided `requirements.txt` file:
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
 
 ## Datasets
 Below are the details and download links for datasets used in our experiments:
