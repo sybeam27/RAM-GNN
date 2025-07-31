@@ -1,6 +1,6 @@
 # RAM-GNN
 Relation-Aware Multiplex Graph Neural Network
-![framework](./figures/fig_framework.pdf)
+![framework](./figures/fig_framework.png)
 
 ## Requirements & Setup
 This codebase utilizes Anaconda for managing environmental dependencies. Please follow these steps to set up the environment:
