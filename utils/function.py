@@ -206,8 +206,9 @@ def get_model_dict(graph_data, hidden_dim, num_layers, dropout):
         "RAM-GNN": lambda: RA_MultiplexRegression(in_dim, hidden_dim, num_rel, 'gcn', num_layers, dropout),
     }
 
-def prediction_train(model, data, optimizer):
+def prediction_train(model, data, optimizer, device):
     model.train()
+    model.to(device)
     optimizer.zero_grad()
 
     # HAN
@@ -258,8 +259,9 @@ def prediction_train(model, data, optimizer):
     return loss.item()
 
 @torch.no_grad()
-def prediction_evaluate(model, data, mask):
+def prediction_evaluate(model, data, mask, device):
     model.eval()
+    model.to(device)
 
     if isinstance(model, HANRegression):
         out = model(data.x_dict, data.edge_index_dict).squeeze(-1)
@@ -387,8 +389,9 @@ def get_classification_models(graph_data, hidden_dim, num_classes, num_layers, d
                 
     }
 
-def detection_train(model, data, optimizer):
+def detection_train(model, data, optimizer, device):
     model.train()
+    model.to(device)
     optimizer.zero_grad()
 
     if isinstance(model, HANClassifier):
@@ -434,8 +437,9 @@ def detection_train(model, data, optimizer):
     return loss.item()
 
 @torch.no_grad()
-def detection_evaluate(model, data, mask):
+def detection_evaluate(model, data, mask, device):
     model.eval()
+    model.to(device)
 
     if isinstance(model, HANClassifier):
         out = model(data.x_dict, data.edge_index_dict)
