@@ -23,8 +23,10 @@ def run_model(model_name, args, graph_data, device):
     model_dict = get_model_dict(graph_data, args.hidden_dim, args.num_layers, args.dropout)
     if model_name not in model_dict:
         raise ValueError(f"Model '{model_name}' is not supported.")
-
-    model = model_dict[model_name]().to(device)
+    
+    model = model_dict[model_name]()
+    if isinstance(model, torch.nn.Module):
+        model = model.to(device)
     result_str = f"\n{'='*30}\n▶ {model_name} Evaluation\n"
 
     model_save_dir = os.path.join(args.save_path, model_name)

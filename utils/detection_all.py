@@ -31,8 +31,10 @@ def run_model(model_name, args, graph_data, device):
     model_dict = get_classification_models(graph_data, args.hidden_dim, args.num_classes, args.num_layers, args.dropout)
     if model_name not in model_dict:
         raise ValueError(f"Model '{model_name}' is not supported.")
-
-    model = model_dict[model_name]().to(device)
+    
+    model = model_dict[model_name]()
+    if isinstance(model, torch.nn.Module):
+        model = model.to(device)
     result_str = f"\n{'='*30}\n▶ {model_name} Evaluation\n"
 
     model_save_dir = os.path.join(args.save_path, model_name)
@@ -64,8 +66,8 @@ def run_model(model_name, args, graph_data, device):
         patience_counter = 0
 
         for epoch in range(1, args.epochs + 1):
-            loss = detection_train(model, graph_data, optimizer)
-            val_result = detection_evaluate(model, graph_data, graph_data['job'].val_mask)
+            loss = detection_train(model, graph_data, optimizer, device)
+            val_result = detection_evaluate(model, graph_data, graph_data['job'].val_mask, device)
             val_acc = val_result['accuracy']
 
             if val_acc > best_val_acc:
@@ -79,17 +81,17 @@ def run_model(model_name, args, graph_data, device):
                     break
             
             # if epoch % 100 == 0:
-            #     print(f"[{args.model}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val Acc: {val_acc:.4f} | F1: {val_result['f1']:.4f}")
+            #     print(f"[{model_name}] Epoch {epoch:03d} | Loss: {loss:.4f} | Val Acc: {val_acc:.4f} | F1: {val_result['f1']:.4f}")
 
         model.load_state_dict(torch.load(save_model_path))
         model.eval()
-        test_result = detection_evaluate(model, graph_data, graph_data['job'].test_mask)
+        test_result = detection_evaluate(model, graph_data, graph_data['job'].test_mask, device)
         test_acc, test_precision, test_recall, test_f1 = test_result['accuracy'], test_result['precision'], test_result['recall'], test_result['f1']
 
-    result_str += f"[{args.model}] Test Acc: {test_acc:.4f} | Prec: {test_precision:.4f} | Rec: {test_recall:.4f} | F1: {test_f1:.4f}"
+    result_str += f"[{model_name}] Test Acc: {test_acc:.4f} | Prec: {test_precision:.4f} | Rec: {test_recall:.4f} | F1: {test_f1:.4f}"
     print(result_str)
 
-    result_dir = os.path.join(args.res_path, args.model)
+    result_dir = os.path.join(args.res_path, model_name)
     os.makedirs(result_dir, exist_ok=True)
 
     # Save to CSV (append or create)
@@ -102,7 +104,7 @@ def run_model(model_name, args, graph_data, device):
         if not file_exists:
             writer.writeheader()
         writer.writerow({
-            'model': args.model,
+            'model': model_name,
             'accuracy': round(test_acc, 4),
             'precision': round(test_precision, 4),
             'recall': round(test_recall, 4),
