@@ -51,7 +51,7 @@ Below are the details and download links for datasets used in our experiments:
 
 2. **BLS (OES/OEWS)** [(Download)](https://www.bls.gov/oes/): The BLS Occupational Employment & Wage Statistics (OEWS, formerly OES) offers semi‑annual estimates of employment and wages across 800+ U.S. occupations, segmented by industry and region, from non‑self‑employed workers data.
 
-3. **Automation Risk (Frey & Osborne 2017)** [(Download)](https://www.kaggle.com/datasets/andrewmvd/occupation-salary-and-likelihood-of-automation): This dataset provides automation probability scores for 702 U.S. occupations, based on Frey & Osborne’s study using a Gaussian process classifier, which found that approximately 47% of occupations were at high risk of automation.
+3. **Automation Risk** [(Download)](https://www.kaggle.com/datasets/andrewmvd/occupation-salary-and-likelihood-of-automation): This dataset provides automation probability scores for 702 U.S. occupations, based on Frey & Osborne’s study using a Gaussian process classifier, which found that approximately 47% of occupations were at high risk of automation.
 
 4. **AIOE (AI Occupational Exposure)** [(Download)](https://github.com/AIOE-Data/AIOE): The AIOE dataset by Felten, Raj, and Seamans (2021) links 52 O*NET‑based job abilities to 10 AI application types, producing occupation‑level AIOE scores, plus industry (AIIE) and geographic (AIGE) exposures.
 
@@ -69,7 +69,7 @@ python ./utils/detection.py --model <model_name>
 
 #### Optional Arguments
 ```
-  --model               🔹(Required) Model name to use (e.g., Linear, RandomForest, XGBoost, MLP, GCN, GAT, GraphSAGE, RGCN, HAN, MuxGNN, RAM-GNN)
+  --model               (Required) Model name to use (e.g., Linear, RandomForest, XGBoost, MLP, GCN, GAT, GraphSAGE, RGCN, HAN, MuxGNN, RAM-GNN)
   --graph_path          Path to the saved graph_data.pt file (default: ../data/detection/graph_data.pt)
   --save_path           Directory to save the trained model (default: ../model/detection/)
   --res_path            Directory to save evaluation results (default: ../res/detection/)
@@ -96,7 +96,7 @@ python ./utils/prediction.py --model <model_name>
 
 #### Optional Arguments
 ```
-  --model               🔹(Required) Model name to use (e.g., Linear, RandomForest, XGBoost, MLP, GCN, GAT, GraphSAGE, RGCN, HAN, MuxGNN, RAM-GNN)
+  --model               (Required) Model name to use (e.g., Linear, RandomForest, XGBoost, MLP, GCN, GAT, GraphSAGE, RGCN, HAN, MuxGNN, RAM-GNN)
   --graph_path          Path to the saved graph_data.pt file (default: ../data/prediction/graph_data.pt)
   --save_path           Directory to save the trained model (default: ../model/prediction/)
   --res_path            Directory to save evaluation results (default: ../res/prediction/)
