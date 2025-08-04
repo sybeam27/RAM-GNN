@@ -11,5 +11,3 @@ python ./utils/prediction.py --model MLP --graph_path './data/prediction/graph_d
 python ./utils/prediction.py --model GCN --graph_path './data/prediction/graph_data.pt' --res_path './res/prediction' 
 python ./utils/prediction.py --model GAT --graph_path './data/prediction/graph_data.pt' --res_path './res/prediction' 
 python ./utils/prediction.py --model GraphSAGE --graph_path './data/prediction/graph_data.pt' --res_path './res/prediction' 
-
-

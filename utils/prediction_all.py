@@ -106,10 +106,14 @@ def main(args):
     
     graph_data = load_data(args.graph_path)
     model_list = [
-        "Linear", "RandomForest", "XGBoost", "MLP", 
-        "GCN", "GAT", "GraphSAGE", 
+        "Linear", 
+        # "RandomForest", "XGBoost",
+        "MLP", 
+        "GCN", "GAT", 
+        # "GraphSAGE", 
         "RGCN", "HAN", 
-        "MuxGNN", "RAM-GNN"
+        "MuxGNN", 
+        "RAM-GNN"
     ]
 
     for model_name in model_list:

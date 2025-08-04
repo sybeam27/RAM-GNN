@@ -115,22 +115,24 @@ def run_model(model_name, args, graph_data, device):
             'hidden_dim': args.hidden_dim
         })
 
-
 def main(args):
     # set_seed(42)
-    # graph_data = load_data(args.graph_path)
-    graph_data = torch.load(args.graph_path, weights_only=False)
-    graph_data = split_masks_stratified(graph_data)
+    # graph_data = torch.load(args.graph_path, weights_only=False)
+    # graph_data = split_masks_stratified(graph_data)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
     graph_data = load_data(args.graph_path)
     model_list = [
-        "Linear", "RandomForest", "XGBoost", "MLP", 
-        "GCN", "GAT", "GraphSAGE", 
+        "Linear", 
+        # "RandomForest", "XGBoost",
+        "MLP", 
+        "GCN", "GAT", 
+        # "GraphSAGE", 
         "RGCN", "HAN", 
-        "MuxGNN", "RAM-GNN"
+        "MuxGNN", 
+        "RAM-GNN"
     ]
 
     for model_name in model_list:
@@ -138,7 +140,6 @@ def main(args):
             run_model(model_name, args, graph_data, device)
         except Exception as e:
             print(f"[ERROR] Failed to run model {model_name}: {e}")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run detection model on graph data")
